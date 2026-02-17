@@ -15,6 +15,7 @@
   };
 
   var _progress = null;
+  var _playerName = null;
 
   var Storage = {
     load: function () {
@@ -29,6 +30,9 @@
         } else {
           _progress = JSON.parse(JSON.stringify(_defaultProgress));
         }
+        return Mesa.data.getItem('playerName');
+      }).then(function (name) {
+        _playerName = name || null;
         return _progress;
       });
     },
@@ -62,7 +66,20 @@
       }
       _progress.totalStars = total;
 
+      if (_playerName) {
+        Mesa.leaderboard.submit(_playerName, total);
+      }
+
       return Storage.save();
+    },
+
+    getPlayerName: function () {
+      return _playerName;
+    },
+
+    setPlayerName: function (name) {
+      _playerName = name;
+      return Mesa.data.setItem('playerName', name);
     },
 
     getStars: function (levelId) {

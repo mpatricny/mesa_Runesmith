@@ -779,6 +779,85 @@ html, body {
   font-style: italic;
 }
 
+/* ---- Name Input ---- */
+
+.name-input {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  font-family: inherit;
+  font-size: 1.1rem;
+  color: var(--parchment);
+  background: var(--bg-stone);
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  outline: none;
+  text-align: center;
+}
+
+.name-input::placeholder {
+  color: var(--parchment-dim);
+  opacity: 0.5;
+}
+
+.name-input:focus {
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.3);
+}
+
+/* ---- Leaderboard ---- */
+
+.lb-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.lb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lb-table thead th {
+  color: var(--gold);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 6px;
+  border-bottom: 2px solid var(--frame-border);
+  text-align: left;
+}
+
+.lb-table thead th:first-child,
+.lb-table thead th:last-child {
+  text-align: center;
+}
+
+.lb-table tbody td {
+  padding: 8px 6px;
+  font-size: 0.95rem;
+  color: var(--parchment-dim);
+  border-bottom: 1px solid rgba(90, 74, 48, 0.2);
+}
+
+.lb-table tbody td:first-child,
+.lb-table tbody td:last-child {
+  text-align: center;
+}
+
+.lb-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lb-table tbody tr:nth-child(1) td { color: #e8c84c; }
+.lb-table tbody tr:nth-child(2) td { color: #c0c0c0; }
+.lb-table tbody tr:nth-child(3) td { color: #cd7f32; }
+
+.lb-table tbody tr.lb-self td {
+  color: var(--sigil-glow);
+  font-weight: bold;
+}
+
 /* ---- Toast notifications ---- */
 
 .toast {

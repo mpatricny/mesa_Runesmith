@@ -15,6 +15,7 @@
     <div class="title-stars" id="title-total-stars"></div>
     <button class="btn btn-primary" id="btn-play">Play</button>
     <button class="btn" id="btn-world-map">World Map</button>
+    <button class="btn" id="btn-leaderboard">Leaderboard</button>
   </div>
 
   <!-- ============ WORLD MAP ============ -->
@@ -134,6 +135,33 @@
       <div class="overlay-buttons">
         <button class="btn btn-small" id="btn-campaign-levels">Level Select</button>
         <button class="btn btn-small" id="btn-campaign-menu">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NAME PROMPT OVERLAY ============ -->
+  <div id="overlay-name" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="overlay-title">Enter Your Name</div>
+      <input type="text" id="input-player-name" class="name-input" maxlength="16" placeholder="Runesmith">
+      <div class="overlay-buttons">
+        <button class="btn btn-small btn-primary" id="btn-name-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LEADERBOARD OVERLAY ============ -->
+  <div id="overlay-leaderboard" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="overlay-title">Leaderboard</div>
+      <div class="lb-scroll">
+        <table class="lb-table" id="lb-table">
+          <thead><tr><th>#</th><th>Name</th><th>Stars</th></tr></thead>
+          <tbody id="lb-body"></tbody>
+        </table>
+      </div>
+      <div class="overlay-buttons">
+        <button class="btn btn-small" id="btn-lb-close">Close</button>
       </div>
     </div>
   </div>

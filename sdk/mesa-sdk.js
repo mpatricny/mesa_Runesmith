@@ -48,6 +48,46 @@
       }
     },
 
+    leaderboard: {
+      submit: function (name, score) {
+        try {
+          var raw = localStorage.getItem(_storagePrefix + 'leaderboard');
+          var entries = raw ? JSON.parse(raw) : [];
+          var found = false;
+          for (var i = 0; i < entries.length; i++) {
+            if (entries[i].name === name) {
+              if (score > entries[i].score) {
+                entries[i].score = score;
+                entries[i].date = new Date().toISOString();
+              }
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            entries.push({ name: name, score: score, date: new Date().toISOString() });
+          }
+          localStorage.setItem(_storagePrefix + 'leaderboard', JSON.stringify(entries));
+          return Promise.resolve();
+        } catch (e) {
+          console.warn('Mesa leaderboard submit failed:', e);
+          return Promise.reject(e);
+        }
+      },
+
+      fetch: function (limit) {
+        try {
+          var raw = localStorage.getItem(_storagePrefix + 'leaderboard');
+          var entries = raw ? JSON.parse(raw) : [];
+          entries.sort(function (a, b) { return b.score - a.score; });
+          return Promise.resolve(entries.slice(0, limit || 20));
+        } catch (e) {
+          console.warn('Mesa leaderboard fetch failed:', e);
+          return Promise.resolve([]);
+        }
+      }
+    },
+
     isInitialized: function () {
       return _initialized;
     }

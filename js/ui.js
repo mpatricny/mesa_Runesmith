@@ -10,6 +10,7 @@
   var _currentLevel = 1;
   var _currentLocation = 1;
   var _toastTimer = null;
+  var _pendingLevel = null;
 
   // Tutorial popups for levels 2-4
   var TUTORIALS = {
@@ -225,6 +226,13 @@
 
   // ---- Start Level ----
   function startLevel(id) {
+    if (!Storage.getPlayerName()) {
+      _pendingLevel = id;
+      $('input-player-name').value = '';
+      showOverlay('overlay-name');
+      return;
+    }
+
     _currentLevel = id;
     _currentLocation = Levels.getLocation(id);
     var success = Game.startLevel(id);
@@ -331,6 +339,33 @@
     }, 1800);
   }
 
+  // ---- Leaderboard ----
+  function showLeaderboard() {
+    Mesa.leaderboard.fetch(20).then(function (entries) {
+      var tbody = $('lb-body');
+      tbody.innerHTML = '';
+      var playerName = Storage.getPlayerName();
+
+      if (entries.length === 0) {
+        var row = document.createElement('tr');
+        row.innerHTML = '<td colspan="3" style="color:var(--parchment-dim);font-style:italic">No entries yet</td>';
+        tbody.appendChild(row);
+      } else {
+        for (var i = 0; i < entries.length; i++) {
+          var row = document.createElement('tr');
+          if (entries[i].name === playerName) {
+            row.className = 'lb-self';
+          }
+          row.innerHTML = '<td>' + (i + 1) + '</td>' +
+            '<td>' + entries[i].name + '</td>' +
+            '<td>\u2605 ' + entries[i].score + '</td>';
+          tbody.appendChild(row);
+        }
+      }
+      showOverlay('overlay-leaderboard');
+    });
+  }
+
   // ---- Event Binding ----
   function bindEvents() {
     // Title screen
@@ -344,6 +379,11 @@
       Audio.playUIClick();
       buildMap();
       showScreen('screen-map');
+    });
+
+    $('btn-leaderboard').addEventListener('click', function () {
+      Audio.playUIClick();
+      showLeaderboard();
     });
 
     // World map
@@ -465,6 +505,32 @@
       hideOverlay('overlay-campaign');
       showScreen('screen-title');
       updateTitleStars();
+    });
+
+    // Name prompt
+    $('btn-name-ok').addEventListener('click', function () {
+      Audio.playUIClick();
+      var name = $('input-player-name').value.trim();
+      if (!name) return;
+      Storage.setPlayerName(name);
+      hideOverlay('overlay-name');
+      if (_pendingLevel) {
+        var lvl = _pendingLevel;
+        _pendingLevel = null;
+        startLevel(lvl);
+      }
+    });
+
+    $('input-player-name').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        $('btn-name-ok').click();
+      }
+    });
+
+    // Leaderboard
+    $('btn-lb-close').addEventListener('click', function () {
+      Audio.playUIClick();
+      hideOverlay('overlay-leaderboard');
     });
 
     // Keyboard
