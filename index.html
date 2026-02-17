@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+  <title>Runesmith: Seal the Breach</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============ TITLE SCREEN ============ -->
+  <div id="screen-title" class="screen active">
+    <div class="title-logo">RUNESMITH</div>
+    <div class="title-subtitle">Seal the Breach</div>
+    <div class="title-stars" id="title-total-stars"></div>
+    <button class="btn btn-primary" id="btn-play">Play</button>
+    <button class="btn" id="btn-world-map">World Map</button>
+  </div>
+
+  <!-- ============ WORLD MAP ============ -->
+  <div id="screen-map" class="screen">
+    <div class="map-title">The Realm</div>
+    <div class="map-container" id="map-container"></div>
+    <button class="btn btn-small" id="btn-map-back">Back</button>
+  </div>
+
+  <!-- ============ LEVEL SELECT ============ -->
+  <div id="screen-levels" class="screen">
+    <div class="levels-header">
+      <button class="btn-back" id="btn-levels-map">&larr;</button>
+      <span id="levels-location-name">Select Chamber</span>
+      <span class="levels-star-count" id="levels-star-count"></span>
+    </div>
+    <div class="levels-grid" id="levels-grid"></div>
+    <button class="btn btn-small" id="btn-levels-back">Back</button>
+  </div>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <div id="screen-game" class="screen">
+    <div id="game-frame-container">
+      <!-- Top bar: level name + moves -->
+      <div class="game-top-bar">
+        <div class="game-level-name" id="hud-level-name">Level 1: Training Yard</div>
+        <div class="game-moves">Moves: <span id="hud-moves">0</span></div>
+      </div>
+
+      <!-- Canvas area -->
+      <div class="game-canvas-wrap">
+        <canvas id="game-canvas"></canvas>
+      </div>
+
+      <!-- D-pad touch controls -->
+      <div class="touch-dpad" id="touch-dpad">
+        <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
+        <button class="dpad-btn dpad-left" data-dir="left">&#9664;</button>
+        <button class="dpad-btn dpad-center">&#9670;</button>
+        <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
+        <button class="dpad-btn dpad-down" data-dir="down">&#9660;</button>
+      </div>
+
+      <!-- Bottom bar: spells + controls -->
+      <div class="game-bottom-bar">
+        <button class="spell-btn disabled" data-spell="tether" id="spell-tether">
+          <span class="spell-key">1</span>
+          <span class="spell-name">Tether</span>
+          <span class="spell-charges" id="charges-tether">(0)</span>
+        </button>
+        <button class="spell-btn disabled" data-spell="transpose" id="spell-transpose">
+          <span class="spell-key">2</span>
+          <span class="spell-name">Transpose</span>
+          <span class="spell-charges" id="charges-transpose">(0)</span>
+        </button>
+        <button class="spell-btn disabled" data-spell="ghostwalk" id="spell-ghostwalk">
+          <span class="spell-key">3</span>
+          <span class="spell-name">Ghostwalk</span>
+          <span class="spell-charges" id="charges-ghostwalk">(0)</span>
+        </button>
+
+        <div class="game-controls">
+          <button class="ctrl-btn" id="btn-undo" title="Undo (Z)">Undo</button>
+          <button class="ctrl-btn" id="btn-restart" title="Restart (R)">Restart</button>
+          <button class="ctrl-btn" id="btn-menu" title="Menu (Esc)">Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VICTORY OVERLAY ============ -->
+  <div id="overlay-victory" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="overlay-title">Seal Complete!</div>
+      <div class="overlay-stars" id="victory-stars"></div>
+      <div class="overlay-stats" id="victory-stats"></div>
+      <div class="overlay-buttons">
+        <button class="btn btn-small" id="btn-victory-restart">Retry</button>
+        <button class="btn btn-small btn-primary" id="btn-victory-next">Next Level</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SPELL UNLOCK OVERLAY ============ -->
+  <div id="overlay-spell" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="spell-unlock-icon" id="spell-unlock-icon"></div>
+      <div class="overlay-title" id="spell-unlock-title">New Spell Unlocked!</div>
+      <div class="spell-unlock-name" id="spell-unlock-name"></div>
+      <div class="spell-unlock-desc" id="spell-unlock-desc"></div>
+      <div class="spell-unlock-keys" id="spell-unlock-keys"></div>
+      <div class="overlay-buttons">
+        <button class="btn btn-small btn-primary" id="btn-spell-ok">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TUTORIAL OVERLAY ============ -->
+  <div id="overlay-tutorial" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="tutorial-icon" id="tutorial-icon"></div>
+      <div class="overlay-title" id="tutorial-title">New Ability!</div>
+      <div class="tutorial-name" id="tutorial-name"></div>
+      <div class="tutorial-desc" id="tutorial-desc"></div>
+      <div class="tutorial-keys" id="tutorial-keys"></div>
+      <div class="overlay-buttons">
+        <button class="btn btn-small btn-primary" id="btn-tutorial-ok">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CAMPAIGN COMPLETE OVERLAY ============ -->
+  <div id="overlay-campaign" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="overlay-title">All Breaches Sealed!</div>
+      <div class="overlay-stats" id="campaign-stats"></div>
+      <div class="overlay-buttons">
+        <button class="btn btn-small" id="btn-campaign-levels">Level Select</button>
+        <button class="btn btn-small" id="btn-campaign-menu">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Scripts (load order matters) -->
+  <script src="sdk/mesa-sdk.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
