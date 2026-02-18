@@ -5,19 +5,20 @@
   'use strict';
 
   function boot() {
-    // Init modules
-    Mesa.init();
-    I18n.init('en');
-    Audio.init();
+    // Init Mesa SDK first, then other modules
+    Mesa.init().then(function () {
+      I18n.init('en');
+      Audio.init();
 
-    var canvas = document.getElementById('game-canvas');
-    Game.init(canvas);
+      var canvas = document.getElementById('game-canvas');
+      Game.init(canvas);
 
-    // Load assets, storage, then init UI
-    Promise.all([
-      Game.loadAssets(),
-      Storage.load()
-    ]).then(function () {
+      // Load assets, storage, then init UI
+      return Promise.all([
+        Game.loadAssets(),
+        Storage.load()
+      ]);
+    }).then(function () {
       // Validate levels in dev
       var issues = Levels.validate();
       if (issues.length > 0) {

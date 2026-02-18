@@ -19,7 +19,11 @@
 
   var Storage = {
     load: function () {
-      return Mesa.data.getItem(SAVE_KEY).then(function (data) {
+      return Mesa.data.getItem(SAVE_KEY).then(function (raw) {
+        var data = null;
+        if (raw) {
+          try { data = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) { data = null; }
+        }
         if (data && data.levelVersion === LEVEL_VERSION) {
           _progress = {
             levelStars: data.levelStars || {},
@@ -31,7 +35,9 @@
           _progress = JSON.parse(JSON.stringify(_defaultProgress));
         }
         return Mesa.data.getItem('playerName');
-      }).then(function (name) {
+      }).then(function (raw) {
+        var name = null;
+        if (raw) { try { name = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) { name = raw; } }
         _playerName = name || null;
         return _progress;
       });
@@ -39,7 +45,7 @@
 
     save: function () {
       if (!_progress) return Promise.resolve();
-      return Mesa.data.setItem(SAVE_KEY, _progress);
+      return Mesa.data.setItem(SAVE_KEY, JSON.stringify(_progress));
     },
 
     getProgress: function () {
@@ -67,7 +73,12 @@
       _progress.totalStars = total;
 
       if (_playerName) {
-        Mesa.leaderboard.submit(_playerName, total);
+        Mesa.leaderboard.submit({
+          key: 'default',
+          playerName: _playerName,
+          displayValue: total + ' ★',
+          sortValue: total
+        });
       }
 
       return Storage.save();
@@ -79,7 +90,7 @@
 
     setPlayerName: function (name) {
       _playerName = name;
-      return Mesa.data.setItem('playerName', name);
+      return Mesa.data.setItem('playerName', JSON.stringify(name));
     },
 
     getStars: function (levelId) {

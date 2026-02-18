@@ -341,7 +341,8 @@
 
   // ---- Leaderboard ----
   function showLeaderboard() {
-    Mesa.leaderboard.fetch(20).then(function (entries) {
+    Mesa.leaderboard.getTop({ key: 'default', limit: 20 }).then(function (res) {
+      var entries = res.entries || [];
       var tbody = $('lb-body');
       tbody.innerHTML = '';
       var playerName = Storage.getPlayerName();
@@ -353,12 +354,12 @@
       } else {
         for (var i = 0; i < entries.length; i++) {
           var row = document.createElement('tr');
-          if (entries[i].name === playerName) {
+          if (entries[i].playerName === playerName || entries[i].isCurrentUser) {
             row.className = 'lb-self';
           }
-          row.innerHTML = '<td>' + (i + 1) + '</td>' +
-            '<td>' + entries[i].name + '</td>' +
-            '<td>\u2605 ' + entries[i].score + '</td>';
+          row.innerHTML = '<td>' + entries[i].rank + '</td>' +
+            '<td>' + entries[i].playerName + '</td>' +
+            '<td>' + entries[i].displayValue + '</td>';
           tbody.appendChild(row);
         }
       }
