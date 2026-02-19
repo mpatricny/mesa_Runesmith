@@ -39,6 +39,10 @@
     }
     $(id).classList.add('active');
     _currentScreen = id;
+    if (id === 'screen-map') {
+      // Sync hotspot overlay after layout settles
+      requestAnimationFrame(function () { syncHotspotOverlay(); });
+    }
   }
 
   function hideOverlay(id) {
@@ -78,11 +82,54 @@
     return s;
   }
 
-  // ---- World Map ----
+  // ---- World Map (Image-based) ----
+
+  // Hotspot positions as % of the map image (x, y center points)
+  // Matches realm-map.png: Tower(left), Crypts(bottom-left), Spire(top-center), Ember(bottom-right), Breach(right)
+  var MAP_HOTSPOT_POSITIONS = {
+    1: { x: 20, y: 35 },   // Runesmith's Tower — top-left tower
+    2: { x: 22, y: 75 },   // Sunken Crypts — bottom-left green
+    3: { x: 48, y: 25 },   // Frozen Spire — top-center ice
+    4: { x: 62, y: 72 },   // Ember Sanctum — bottom-right fire
+    5: { x: 83, y: 35 }    // Final Breach — right purple portal
+  };
+
+  // Adjust hotspot overlay to match the actual rendered image area (object-fit: contain adds letterboxing)
+  function syncHotspotOverlay() {
+    var img = $('map-image');
+    var container = $('map-hotspots');
+    if (!img || !container) return;
+
+    var wrapW = img.parentElement.clientWidth;
+    var wrapH = img.parentElement.clientHeight;
+    var imgRatio = img.naturalWidth / img.naturalHeight;
+    var wrapRatio = wrapW / wrapH;
+
+    var renderedW, renderedH, offsetX, offsetY;
+    if (wrapRatio > imgRatio) {
+      // Letterboxed on sides
+      renderedH = wrapH;
+      renderedW = wrapH * imgRatio;
+      offsetX = (wrapW - renderedW) / 2;
+      offsetY = 0;
+    } else {
+      // Letterboxed on top/bottom
+      renderedW = wrapW;
+      renderedH = wrapW / imgRatio;
+      offsetX = 0;
+      offsetY = (wrapH - renderedH) / 2;
+    }
+
+    container.style.left = offsetX + 'px';
+    container.style.top = offsetY + 'px';
+    container.style.width = renderedW + 'px';
+    container.style.height = renderedH + 'px';
+  }
+
   function buildMap() {
-    var container = $('map-container');
+    var container = $('map-hotspots');
     container.innerHTML = '';
-    var staggerIndex = 0;
+    syncHotspotOverlay();
 
     for (var i = 1; i <= 5; i++) {
       var loc = Levels.getLocationMeta(i);
@@ -91,45 +138,42 @@
       var stars = Storage.getLocationStars(i);
       var maxStars = 20 * 3;
       var color = LOCATION_COLORS[i];
+      var pos = MAP_HOTSPOT_POSITIONS[i];
 
-      // Path connector (except before first)
-      if (i > 1) {
-        var path = document.createElement('div');
-        path.className = 'map-path';
-        path.style.animationDelay = (staggerIndex * 0.06) + 's';
-        container.appendChild(path);
-        // Trigger stagger animation on next frame
-        (function (el, idx) {
-          requestAnimationFrame(function () {
-            el.classList.add('stagger-in');
-          });
-        })(path, staggerIndex);
-        staggerIndex++;
-      }
+      var hotspot = document.createElement('div');
+      hotspot.className = 'map-hotspot';
+      if (!unlocked) hotspot.classList.add('locked');
+      else if (sealed) hotspot.classList.add('sealed');
+      else hotspot.classList.add('active');
 
-      var node = document.createElement('div');
-      node.className = 'map-location';
-      if (!unlocked) node.classList.add('locked');
-      else if (sealed) node.classList.add('sealed');
-      else node.classList.add('active');
+      hotspot.style.left = pos.x + '%';
+      hotspot.style.top = pos.y + '%';
+      hotspot.style.transform = 'translate(-50%, -50%)';
+      hotspot.style.setProperty('--loc-color', color);
 
-      node.style.setProperty('--loc-color', color);
-      node.style.animationDelay = (staggerIndex * 0.08) + 's';
+      // Glowing ring
+      var ring = document.createElement('div');
+      ring.className = 'map-loc-ring';
+      hotspot.appendChild(ring);
 
+      // Name label
       var nameEl = document.createElement('div');
       nameEl.className = 'map-loc-name';
       nameEl.textContent = loc.name;
+      hotspot.appendChild(nameEl);
 
+      // Stars or locked text
       var starsEl = document.createElement('div');
-      starsEl.className = 'map-loc-stars';
-
       if (!unlocked) {
-        starsEl.textContent = 'Seal previous breach to unlock';
         starsEl.className = 'map-loc-subtitle';
+        starsEl.textContent = '\uD83D\uDD12 Locked';
       } else {
+        starsEl.className = 'map-loc-stars';
         starsEl.innerHTML = '\u2605 ' + stars + ' / ' + maxStars;
       }
+      hotspot.appendChild(starsEl);
 
+      // Badge
       var badge = document.createElement('div');
       badge.className = 'map-loc-badge';
       if (sealed) {
@@ -139,14 +183,12 @@
         badge.textContent = 'Active';
         badge.classList.add('badge-active');
       }
+      if (badge.textContent) hotspot.appendChild(badge);
 
-      node.appendChild(nameEl);
-      node.appendChild(starsEl);
-      if (badge.textContent) node.appendChild(badge);
-
+      // Click handler
       if (unlocked) {
         (function (locId) {
-          node.addEventListener('click', function () {
+          hotspot.addEventListener('click', function () {
             Audio.playUIClick();
             _currentLocation = locId;
             buildLevelGrid(locId);
@@ -155,15 +197,7 @@
         })(i);
       }
 
-      container.appendChild(node);
-
-      // Trigger stagger animation
-      (function (el, idx) {
-        requestAnimationFrame(function () {
-          el.classList.add('stagger-in');
-        });
-      })(node, staggerIndex);
-      staggerIndex++;
+      container.appendChild(hotspot);
     }
   }
 
@@ -551,6 +585,9 @@
     window.addEventListener('resize', function () {
       if (_currentScreen === 'screen-game') {
         Game.resizeCanvas();
+      }
+      if (_currentScreen === 'screen-map') {
+        syncHotspotOverlay();
       }
     });
 

@@ -10,19 +10,23 @@
 
   <!-- ============ TITLE SCREEN ============ -->
   <div id="screen-title" class="screen active">
-    <div class="title-logo">RUNESMITH</div>
-    <div class="title-subtitle">Seal the Breach</div>
+    <img src="img/menu-title.png" alt="Runesmith: Seal the Breach" class="title-logo-img">
+    <div class="title-subtitle">A Sokoban-style Puzzle Game</div>
     <div class="title-stars" id="title-total-stars"></div>
-    <button class="btn btn-primary" id="btn-play">Play</button>
-    <button class="btn" id="btn-world-map">World Map</button>
-    <button class="btn" id="btn-leaderboard">Leaderboard</button>
+    <div class="title-buttons">
+      <button class="btn-styled" id="btn-play"><span class="btn-styled-text">Play</span></button>
+      <button class="btn-styled" id="btn-world-map"><span class="btn-styled-text">World Map</span></button>
+      <button class="btn-styled" id="btn-leaderboard"><span class="btn-styled-text">Leaderboard</span></button>
+    </div>
   </div>
 
   <!-- ============ WORLD MAP ============ -->
   <div id="screen-map" class="screen">
-    <div class="map-title">The Realm</div>
-    <div class="map-container" id="map-container"></div>
-    <button class="btn btn-small" id="btn-map-back">Back</button>
+    <div class="map-image-wrap">
+      <img src="img/realm-map.png" alt="The Realm" class="map-image" id="map-image">
+      <div class="map-hotspots" id="map-hotspots"></div>
+    </div>
+    <button class="map-back-btn" id="btn-map-back">&#8592; Back</button>
   </div>
 
   <!-- ============ LEVEL SELECT ============ -->
