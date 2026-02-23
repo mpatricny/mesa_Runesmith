@@ -116,6 +116,7 @@ html, body {
   align-items: center;
   gap: 8px;
   margin-bottom: 5vh;
+  width: 100%;
 }
 
 .btn-styled {
@@ -267,33 +268,6 @@ html, body {
 .map-hotspot.locked {
   cursor: default;
   filter: grayscale(0.6) brightness(0.5);
-}
-
-.map-hotspot.locked .map-loc-ring {
-  border-color: #444;
-  box-shadow: none;
-}
-
-/* Glowing ring around each location */
-.map-loc-ring {
-  width: clamp(50px, 10vw, 90px);
-  height: clamp(50px, 10vw, 90px);
-  border-radius: 50%;
-  border: 2px solid var(--loc-color, var(--gold));
-  box-shadow: 0 0 15px color-mix(in srgb, var(--loc-color, var(--gold)) 50%, transparent),
-              inset 0 0 10px color-mix(in srgb, var(--loc-color, var(--gold)) 20%, transparent);
-  background: radial-gradient(circle, color-mix(in srgb, var(--loc-color, var(--gold)) 15%, transparent) 0%, transparent 70%);
-  animation: map-ring-pulse 2.5s ease-in-out infinite;
-}
-
-.map-hotspot.sealed .map-loc-ring {
-  border-color: #5a8a5a;
-  box-shadow: 0 0 12px rgba(90, 138, 90, 0.4);
-}
-
-@keyframes map-ring-pulse {
-  0%, 100% { box-shadow: 0 0 15px color-mix(in srgb, var(--loc-color, var(--gold)) 40%, transparent); }
-  50% { box-shadow: 0 0 25px color-mix(in srgb, var(--loc-color, var(--gold)) 60%, transparent), 0 0 40px color-mix(in srgb, var(--loc-color, var(--gold)) 20%, transparent); }
 }
 
 .map-loc-name {
@@ -1053,4 +1027,58 @@ html, body {
   .spell-btn .spell-name {
     font-size: 0.72rem;
   }
+}
+
+/* ---- Seal Animation ---- */
+
+/* Flying stars (JS-driven animation, no CSS keyframes needed) */
+.seal-anim-star {
+  position: absolute;
+  font-size: 1.5rem;
+  color: var(--gold);
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Seal stamp */
+.seal-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(2);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(201,168,76,0.8);
+  opacity: 0;
+  animation: seal-stamp-in 0.5s ease-out forwards;
+  z-index: 10;
+}
+
+@keyframes seal-stamp-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(3); }
+  60% { opacity: 1; transform: translate(-50%, -50%) scale(0.9); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Next location unlock glow */
+.loc-unlock-glow {
+  animation: unlock-glow 1.5s ease-out;
+}
+
+@keyframes unlock-glow {
+  0% { box-shadow: 0 0 0px rgba(201,168,76,0); filter: brightness(1); }
+  50% { box-shadow: 0 0 30px rgba(201,168,76,0.8); filter: brightness(1.4); }
+  100% { box-shadow: none; filter: brightness(1); }
+}
+
+/* Breach seal unlock glow in level grid */
+.level-cell.breach-unlock-glow {
+  animation: breach-cell-glow 1.5s ease-out;
+}
+
+@keyframes breach-cell-glow {
+  0% { box-shadow: 0 0 0 rgba(201,168,76,0); }
+  40% { box-shadow: 0 0 20px rgba(201,168,76,0.8), inset 0 0 10px rgba(201,168,76,0.3); }
+  100% { box-shadow: 0 0 8px rgba(201,168,76,0.3); }
 }

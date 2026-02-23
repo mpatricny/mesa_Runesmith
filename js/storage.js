@@ -5,7 +5,7 @@
   'use strict';
 
   var SAVE_KEY = 'progress';
-  var LEVEL_VERSION = 3; // Bumped for 100-level campaign
+  var LEVEL_VERSION = 5; // Bumped for 115-level tutorial campaign
 
   var _defaultProgress = {
     levelStars: {},
@@ -126,7 +126,7 @@
     },
 
     isLocationUnlocked: function (locationId) {
-      if (locationId <= 1) return true;
+      if (locationId <= 0) return true;
       var prevMeta = Levels.getLocationMeta(locationId - 1);
       return Storage.getStars(prevMeta.endLevel) > 0;
     },

@@ -11,18 +11,22 @@
   var _currentLocation = 1;
   var _toastTimer = null;
   var _pendingLevel = null;
+  var _pendingSealAnimation = null; // { locationId, nextLocationId }
+  var _pendingBreachUnlock = null; // levelId of newly unlocked breach seal
 
-  // Tutorial popups for levels 2-4
+  // Tutorial popups for levels 1, 5, 9, 12
   var TUTORIALS = {
-    2: { spell: 'tether', icon: '\u2B50', name: 'Rune Tether', desc: 'Pull a distant runestone toward you along a cardinal direction.', keys: 'Press 1, then a direction' },
-    3: { spell: 'ghostwalk', icon: '\uD83D\uDC7B', name: 'Ghostwalk', desc: 'Phase through an adjacent runestone to the tile behind it.', keys: 'Press 3, then a direction' },
-    4: { spell: 'transpose', icon: '\u2728', name: 'Transpose', desc: 'Swap positions with an adjacent runestone.', keys: 'Press 2, then a direction' }
+    1: { spell: 'push', icon: '\u27A1', name: 'Push', desc: 'Walk into a runestone to push it. Place all stones on sigils to seal the breach.', keys: 'Arrow keys or WASD to move' },
+    5: { spell: 'tether', icon: '\u2B50', name: 'Rune Tether', desc: 'Pull a distant runestone toward you along a cardinal direction.', keys: 'Press 1, then a direction' },
+    9: { spell: 'transpose', icon: '\u2728', name: 'Transpose', desc: 'Swap positions with an adjacent runestone.', keys: 'Press 2, then a direction' },
+    12: { spell: 'ghostwalk', icon: '\uD83D\uDC7B', name: 'Ghostwalk', desc: 'Phase through an adjacent runestone to the tile behind it.', keys: 'Press 3, then a direction' }
   };
 
   var _shownTutorials = {};
 
   // Location theme colors
   var LOCATION_COLORS = {
+    0: '#a0c4a0',
     1: '#c9a84c',
     2: '#8a9a8a',
     3: '#6ab4ff',
@@ -87,11 +91,12 @@
   // Hotspot positions as % of the map image (x, y center points)
   // Matches realm-map.png: Tower(left), Crypts(bottom-left), Spire(top-center), Ember(bottom-right), Breach(right)
   var MAP_HOTSPOT_POSITIONS = {
-    1: { x: 20, y: 35 },   // Runesmith's Tower — top-left tower
-    2: { x: 22, y: 75 },   // Sunken Crypts — bottom-left green
-    3: { x: 48, y: 25 },   // Frozen Spire — top-center ice
-    4: { x: 62, y: 72 },   // Ember Sanctum — bottom-right fire
-    5: { x: 83, y: 35 }    // Final Breach — right purple portal
+    0: { x: 50, y: 55 },
+    1: { x: 32, y: 50 },   // Runesmith's Tower — top-left tower
+    2: { x: 38.5, y: 69 },   // Sunken Crypts — bottom-left green
+    3: { x: 49, y: 35 },   // Frozen Spire — top-center ice
+    4: { x: 54.3, y: 66 },   // Ember Sanctum — bottom-right fire
+    5: { x: 68, y: 50 }    // Final Breach — right purple portal
   };
 
   // Adjust hotspot overlay to match the actual rendered image area (object-fit: contain adds letterboxing)
@@ -131,12 +136,13 @@
     container.innerHTML = '';
     syncHotspotOverlay();
 
-    for (var i = 1; i <= 5; i++) {
+    for (var i = 0; i <= 5; i++) {
       var loc = Levels.getLocationMeta(i);
       var unlocked = Storage.isLocationUnlocked(i);
       var sealed = Storage.isBreachSealed(i);
       var stars = Storage.getLocationStars(i);
-      var maxStars = 20 * 3;
+      var maxStars = 0;
+      for (var lv = loc.startLevel; lv <= loc.endLevel; lv++) maxStars += Levels.getMaxStars(lv);
       var color = LOCATION_COLORS[i];
       var pos = MAP_HOTSPOT_POSITIONS[i];
 
@@ -150,11 +156,6 @@
       hotspot.style.top = pos.y + '%';
       hotspot.style.transform = 'translate(-50%, -50%)';
       hotspot.style.setProperty('--loc-color', color);
-
-      // Glowing ring
-      var ring = document.createElement('div');
-      ring.className = 'map-loc-ring';
-      hotspot.appendChild(ring);
 
       // Name label
       var nameEl = document.createElement('div');
@@ -199,6 +200,115 @@
 
       container.appendChild(hotspot);
     }
+
+    // Trigger seal animation if pending
+    if (_pendingSealAnimation) {
+      var anim = _pendingSealAnimation;
+      _pendingSealAnimation = null;
+      setTimeout(function () { playSealAnimation(anim.locationId, anim.nextLocationId); }, 400);
+    }
+  }
+
+  // ---- Seal Animation ----
+  function playSealAnimation(locId, nextLocId) {
+    var hotspot = document.querySelectorAll('.map-hotspot')[locId];
+    if (!hotspot) return;
+
+    // Parse hotspot target position (percentage values)
+    var targetX = parseFloat(hotspot.style.left);
+    var targetY = parseFloat(hotspot.style.top);
+
+    // 1. Fly 5 star particles into the hotspot using JS-driven animation
+    var mapContainer = $('map-hotspots');
+    var starEls = [];
+    var FLIGHT_DURATION = 1000; // ms
+
+    for (var i = 0; i < 5; i++) {
+      var star = document.createElement('div');
+      star.className = 'seal-anim-star';
+      star.textContent = '\u2605';
+      var startX = Math.random() * 80 + 10;
+      var startY = Math.random() * 80 + 10;
+      star.style.left = startX + '%';
+      star.style.top = startY + '%';
+      star._startX = startX;
+      star._startY = startY;
+      star._delay = i * 150; // stagger start times
+      mapContainer.appendChild(star);
+      starEls.push(star);
+    }
+
+    // Ease-in-out cubic
+    function ease(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    var animStart = performance.now();
+    function animateStars(now) {
+      var allDone = true;
+      for (var j = 0; j < starEls.length; j++) {
+        var s = starEls[j];
+        var elapsed = now - animStart - s._delay;
+        if (elapsed < 0) { allDone = false; continue; }
+        var t = Math.min(elapsed / FLIGHT_DURATION, 1);
+        var e = ease(t);
+        s.style.left = (s._startX + (targetX - s._startX) * e) + '%';
+        s.style.top = (s._startY + (targetY - s._startY) * e) + '%';
+        s.style.transform = 'scale(' + (1.5 - 1.2 * e) + ')';
+        s.style.opacity = (1 - t * 0.8);
+        if (t < 1) allDone = false;
+      }
+      if (!allDone) {
+        requestAnimationFrame(animateStars);
+      } else {
+        // Remove stars and proceed to stamp
+        for (var k = 0; k < starEls.length; k++) starEls[k].remove();
+        showSealStamp(hotspot, nextLocId);
+      }
+    }
+    requestAnimationFrame(animateStars);
+  }
+
+  function showSealStamp(hotspot, nextLocId) {
+    var stamp = document.createElement('div');
+    stamp.className = 'seal-stamp';
+    stamp.textContent = 'SEALED';
+    hotspot.appendChild(stamp);
+
+    hotspot.classList.remove('active');
+    hotspot.classList.add('sealed');
+
+    var badge = hotspot.querySelector('.map-loc-badge');
+    if (badge) {
+      badge.textContent = '\u2713 Sealed';
+      badge.className = 'map-loc-badge badge-sealed';
+    }
+
+    // Unlock glow on next location
+    if (nextLocId !== null) {
+      setTimeout(function () {
+        var nextHotspot = document.querySelectorAll('.map-hotspot')[nextLocId];
+        if (nextHotspot && nextHotspot.classList.contains('locked')) {
+          nextHotspot.classList.remove('locked');
+          nextHotspot.classList.add('active', 'loc-unlock-glow');
+          var subtitle = nextHotspot.querySelector('.map-loc-subtitle');
+          if (subtitle) {
+            subtitle.className = 'map-loc-stars';
+            subtitle.innerHTML = '\u2605 0 / ...';
+          }
+          var nBadge = document.createElement('div');
+          nBadge.className = 'map-loc-badge badge-active';
+          nBadge.textContent = 'Active';
+          nextHotspot.appendChild(nBadge);
+          nextHotspot.addEventListener('click', function () {
+            Audio.playUIClick();
+            _currentLocation = nextLocId;
+            buildLevelGrid(nextLocId);
+            showScreen('screen-levels');
+          });
+        }
+      }, 600);
+    }
   }
 
   // ---- Level Grid ----
@@ -213,8 +323,10 @@
     var locStars = Storage.getLocationStars(locationId);
     var gate = Levels.getBreachSealGate();
 
+    var maxLocStars = 0;
+    for (var j = 0; j < levelIds.length; j++) maxLocStars += Levels.getMaxStars(levelIds[j]);
     $('levels-location-name').textContent = loc.name;
-    $('levels-star-count').innerHTML = '\u2605 ' + locStars + ' / ' + (levelIds.length * 3);
+    $('levels-star-count').innerHTML = '\u2605 ' + locStars + ' / ' + maxLocStars;
 
     for (var i = 0; i < levelIds.length; i++) {
       var levelId = levelIds[i];
@@ -229,7 +341,14 @@
         cell.classList.add('breach-seal');
       }
 
-      if (levelId > highest || breachLocked) {
+      var isTutorial = (locationId === 0);
+      var levelLocked;
+      if (isTutorial) {
+        levelLocked = (levelId > highest);
+      } else {
+        levelLocked = breachLocked;
+      }
+      if (levelLocked) {
         cell.classList.add('locked');
         var lockInfo = '';
         if (isBreachSeal && breachLocked) {
@@ -241,11 +360,25 @@
       } else {
         if (stars > 0) cell.classList.add('completed');
         cell.innerHTML = '<span class="level-num">' + levelId + '</span>' +
-          '<span class="level-stars">' + starString(stars, 3) + '</span>';
+          '<span class="level-stars">' + starString(stars, Levels.getMaxStars(levelId)) + '</span>';
         cell.dataset.level = levelId;
         cell.addEventListener('click', onLevelCellClick);
       }
       grid.appendChild(cell);
+    }
+
+    // Show breach seal unlock effect if pending
+    if (_pendingBreachUnlock) {
+      var unlockId = _pendingBreachUnlock;
+      _pendingBreachUnlock = null;
+      var cells = grid.querySelectorAll('.level-cell');
+      for (var k = 0; k < cells.length; k++) {
+        if (parseInt(cells[k].dataset.level) === unlockId) {
+          cells[k].classList.add('breach-unlock-glow');
+          break;
+        }
+      }
+      showToast('Breach Seal level unlocked!');
     }
   }
 
@@ -322,11 +455,17 @@
 
   // ---- Victory ----
   function showVictory(levelId, stars, state) {
-    $('victory-stars').innerHTML = starHTML(stars, 3);
+    var maxStars = Levels.getMaxStars(levelId);
+    $('victory-stars').innerHTML = starHTML(stars, maxStars);
 
     var spellMsg = '';
-    if (state.spellsUsed === 0) {
-      spellMsg = 'No spells used \u2014 Perfect!';
+    var meta = Levels.getMeta(levelId);
+    var parSpells = meta ? (meta.parSpells || 0) : 0;
+    var loc = meta ? meta.location : -1;
+    if (loc === 0) {
+      spellMsg = 'Level complete!';
+    } else if (state.spellsUsed <= parSpells) {
+      spellMsg = parSpells === 0 ? 'No spells used \u2014 Perfect!' : 'Optimal spell use \u2014 Perfect!';
     } else {
       spellMsg = 'Spells used: ' + state.spellsUsed;
     }
@@ -336,16 +475,39 @@
     $('victory-stats').innerHTML = stats;
 
     var nextBtn = $('btn-victory-next');
-    var loc = Levels.getLocationMeta(_currentLocation);
+    var locMeta = Levels.getLocationMeta(_currentLocation);
     if (levelId >= Levels.getCount()) {
       nextBtn.textContent = 'Finish';
-    } else if (levelId >= loc.endLevel) {
+    } else if (levelId >= locMeta.endLevel) {
       nextBtn.textContent = 'Back to Map';
     } else {
       nextBtn.textContent = I18n.t('next');
     }
 
+    // Capture location stars before completion for breach unlock detection
+    var locStarsBefore = Storage.getLocationStars(_currentLocation);
+
+    // Check if this completion seals the current location
+    var wasSealed = Storage.isBreachSealed(_currentLocation);
     Storage.completeLevel(levelId, stars);
+    var nowSealed = Storage.isBreachSealed(_currentLocation);
+
+    // Check if breach seal just became unlocked
+    var breachSealId = locMeta.endLevel;
+    var breachMeta = Levels.getMeta(breachSealId);
+    if (breachMeta && breachMeta.isBreachSeal) {
+      var wasBreachLocked = locStarsBefore < Levels.getBreachSealGate();
+      var nowBreachLocked = Storage.isBreachLocked(breachSealId);
+      if (wasBreachLocked && !nowBreachLocked) {
+        _pendingBreachUnlock = breachSealId;
+      }
+    }
+    if (!wasSealed && nowSealed) {
+      _pendingSealAnimation = {
+        locationId: _currentLocation,
+        nextLocationId: _currentLocation < 5 ? _currentLocation + 1 : null
+      };
+    }
 
     setTimeout(function () {
       showOverlay('overlay-victory');
@@ -602,9 +764,15 @@
     });
   }
 
+  function getTotalMaxStars() {
+    var total = 0;
+    for (var i = 1; i <= Levels.getCount(); i++) total += Levels.getMaxStars(i);
+    return total;
+  }
+
   function showCampaignComplete() {
     var total = Storage.getTotalStars();
-    var max = Levels.getCount() * 3;
+    var max = getTotalMaxStars();
     $('campaign-stats').innerHTML =
       '<strong>' + I18n.t('totalStars') + ':</strong> ' + total + ' / ' + max + '<br>' +
       I18n.t('campaignCompleteMsg');
@@ -613,7 +781,7 @@
 
   function updateTitleStars() {
     var total = Storage.getTotalStars();
-    var max = Levels.getCount() * 3;
+    var max = getTotalMaxStars();
     var el = $('title-total-stars');
     if (total > 0) {
       el.textContent = '\u2605 ' + total + '/' + max;

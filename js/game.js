@@ -12,6 +12,14 @@
 
   // Per-location environment themes
   var THEMES = {
+    // 0: Training Grounds — earthy green
+    0: {
+      floor: '#1e241e', floorAlt: '#1a201a',
+      wall: '#3a4e3a', wallTop: '#4a5e4a', wallDark: '#2a3a2a',
+      stone: '#607060', stoneTop: '#708070', stoneDark: '#4a5a4a',
+      void: '#060806', dust: '#8aaa8a',
+      mortarAlpha: 0.2
+    },
     // 1: Runesmith's Tower — warm sandstone & gold
     1: {
       floor: '#2a2218', floorAlt: '#252015',
@@ -171,9 +179,10 @@
     return true;
   }
 
-  function calcStars(spellsUsed) {
-    if (spellsUsed === 0) return 3;
-    if (spellsUsed <= 1) return 2;
+  function calcStars(spellsUsed, parSpells) {
+    var par = parSpells || 0;
+    if (spellsUsed <= par) return 3;
+    if (spellsUsed <= par + 1) return 2;
     return 1;
   }
 
@@ -910,7 +919,9 @@
       if (checkWin()) {
         _state.won = true;
         _activeSpell = null;
-        var stars = calcStars(_state.spellsUsed);
+        var stars = calcStars(_state.spellsUsed, _level.parSpells);
+        var maxStars = Levels.getMaxStars(_level.id);
+        if (stars > maxStars) stars = maxStars;
         Audio.playSealComplete();
         spawnVictoryBurst();
         if (_onWin) _onWin(_level.id, stars, _state);
