@@ -18,6 +18,7 @@
       <button class="btn-styled" id="btn-world-map"><span class="btn-styled-text">World Map</span></button>
       <button class="btn-styled" id="btn-leaderboard"><span class="btn-styled-text">Leaderboard</span></button>
     </div>
+    <button class="title-reset-btn" id="btn-reset-progress">Reset Progress</button>
   </div>
 
   <!-- ============ WORLD MAP ============ -->
@@ -158,6 +159,9 @@
   <div id="overlay-leaderboard" class="overlay hidden">
     <div class="overlay-panel">
       <div class="overlay-title">Leaderboard</div>
+      <div class="lb-login-hint hidden" id="lb-login-hint">
+        Log in to PlayMesa to see other players' standings
+      </div>
       <div class="lb-scroll">
         <table class="lb-table" id="lb-table">
           <thead><tr><th>#</th><th>Name</th><th>Stars</th></tr></thead>
@@ -166,6 +170,18 @@
       </div>
       <div class="overlay-buttons">
         <button class="btn btn-small" id="btn-lb-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESET CONFIRM OVERLAY ============ -->
+  <div id="overlay-reset" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="overlay-title">Reset Progress?</div>
+      <div class="overlay-stats">All stars, unlocked levels, and your player name will be erased. This cannot be undone.</div>
+      <div class="overlay-buttons">
+        <button class="btn btn-small" id="btn-reset-cancel">Cancel</button>
+        <button class="btn btn-small btn-danger" id="btn-reset-confirm">Reset</button>
       </div>
     </div>
   </div>

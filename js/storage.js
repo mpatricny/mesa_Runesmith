@@ -138,7 +138,11 @@
 
     reset: function () {
       _progress = JSON.parse(JSON.stringify(_defaultProgress));
-      return Storage.save();
+      _playerName = null;
+      return Promise.all([
+        Storage.save(),
+        Mesa.data.removeItem('playerName')
+      ]);
     }
   };
 

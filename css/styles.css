@@ -119,6 +119,24 @@ html, body {
   width: 100%;
 }
 
+.title-reset-btn {
+  background: none;
+  border: none;
+  color: var(--parchment-dim);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.title-reset-btn:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
 .btn-styled {
   position: relative;
   width: min(85%, 360px);
@@ -199,6 +217,16 @@ html, body {
   padding: 8px 20px;
   font-size: 0.9rem;
   min-width: 0;
+}
+
+.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(204, 68, 68, 0.15);
+  box-shadow: 0 0 12px rgba(204, 68, 68, 0.2);
 }
 
 .btn-back {
@@ -852,6 +880,21 @@ html, body {
 }
 
 /* ---- Leaderboard ---- */
+
+.lb-login-hint {
+  font-size: 0.8rem;
+  color: var(--parchment-dim);
+  font-style: italic;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 4px;
+}
+
+.lb-login-hint.hidden {
+  display: none;
+}
 
 .lb-scroll {
   max-height: 320px;

@@ -405,6 +405,7 @@
     var success = Game.startLevel(id);
     if (!success) return;
 
+    Mesa.game.gameplayStart();
     showScreen('screen-game');
     Game.resizeCanvas();
     updateHUD();
@@ -455,6 +456,7 @@
 
   // ---- Victory ----
   function showVictory(levelId, stars, state) {
+    Mesa.game.gameplayStop();
     var maxStars = Levels.getMaxStars(levelId);
     $('victory-stars').innerHTML = starHTML(stars, maxStars);
 
@@ -537,6 +539,15 @@
 
   // ---- Leaderboard ----
   function showLeaderboard() {
+    // Show/hide login hint based on Mesa auth state
+    var loginHint = $('lb-login-hint');
+    var loggedIn = Mesa.user.isLoggedIn();
+    if (loggedIn) {
+      loginHint.classList.add('hidden');
+    } else {
+      loginHint.classList.remove('hidden');
+    }
+
     Mesa.leaderboard.getTop({ key: 'default', limit: 20 }).then(function (res) {
       var entries = res.entries || [];
       var tbody = $('lb-body');
@@ -545,7 +556,8 @@
 
       if (entries.length === 0) {
         var row = document.createElement('tr');
-        row.innerHTML = '<td colspan="3" style="color:var(--parchment-dim);font-style:italic">No entries yet</td>';
+        var msg = loggedIn ? 'No entries yet' : 'Log in to PlayMesa to compete';
+        row.innerHTML = '<td colspan="3" style="color:var(--parchment-dim);font-style:italic">' + msg + '</td>';
         tbody.appendChild(row);
       } else {
         for (var i = 0; i < entries.length; i++) {
@@ -616,6 +628,7 @@
 
     $('btn-menu').addEventListener('click', function () {
       Audio.playUIClick();
+      Mesa.game.gameplayStop();
       Game.stopRenderLoop();
       buildMap();
       showScreen('screen-map');
@@ -730,10 +743,31 @@
       hideOverlay('overlay-leaderboard');
     });
 
+    // Reset progress
+    $('btn-reset-progress').addEventListener('click', function () {
+      Audio.playUIClick();
+      showOverlay('overlay-reset');
+    });
+
+    $('btn-reset-cancel').addEventListener('click', function () {
+      Audio.playUIClick();
+      hideOverlay('overlay-reset');
+    });
+
+    $('btn-reset-confirm').addEventListener('click', function () {
+      Audio.playUIClick();
+      hideOverlay('overlay-reset');
+      Storage.reset().then(function () {
+        showToast('Progress reset');
+        updateTitleStars();
+      });
+    });
+
     // Keyboard
     document.addEventListener('keydown', function (e) {
       if (_currentScreen === 'screen-game') {
         if (e.key === 'Escape') {
+          Mesa.game.gameplayStop();
           Game.stopRenderLoop();
           buildMap();
           showScreen('screen-map');

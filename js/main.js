@@ -7,6 +7,14 @@
   function boot() {
     // Init Mesa SDK first, then other modules
     Mesa.init().then(function () {
+      Mesa.game.loadingStart();
+
+      // Listen for SDK errors and surface them
+      Mesa.on('error', function (err) {
+        Mesa.log.warn('Mesa error:', err);
+        if (window.UI && UI.showToast) UI.showToast('Connection error');
+      });
+
       I18n.init('en');
       Audio.init();
 
@@ -26,6 +34,7 @@
       }
 
       UI.init();
+      Mesa.game.loadingEnd();
 
       // Show title screen
       UI.showScreen('screen-title');
